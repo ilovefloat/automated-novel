@@ -40,3 +40,5 @@ Novelpia 업로드 관련 Secret/Variable은 생성 엔진이 안정화된 뒤 �
 ## GitHub Pages
 
 `docs/**`가 `main`에 반영되면 `deploy-pages.yml`이 GitHub Pages를 배포한다. 메인 페이지는 `docs/index.html`, 회차 데이터는 `docs/episodes.json`, 실제 본문은 `docs/episodes/*.md`에서 제공한다.
+
+<!-- generation-engine-test -->
