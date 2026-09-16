@@ -1,0 +1,89 @@
+name: Codex maintenance
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 16 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: novel-maintenance
+  cancel-in-progress: false
+
+jobs:
+  maintain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create maintenance branch
+        run: |
+          branch="codex/maintenance-${GITHUB_RUN_ID}"
+          git switch -c "$branch"
+          echo "BRANCH=$branch" >> "$GITHUB_ENV"
+
+      - name: Run Codex
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          allow-bots: true
+          permission-profile: ":workspace"
+          prompt-file: .github/codex/maintenance.md
+          output-file: ${{ runner.temp }}/codex-final-message.txt
+
+      - name: Validate changes
+        run: |
+          python -m py_compile scripts/*.py
+          if [ -f scripts/validate_repository.py ]; then
+            python scripts/validate_repository.py
+          fi
+
+      - name: Check for changes
+        id: diff
+        run: |
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push maintenance branch
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "codex-maintenance[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts prompts .github/codex .github/workflows AGENTS.md README.md
+          git commit -m "Automated Codex maintenance"
+          git push --set-upstream origin "$BRANCH"
+
+      - name: Open pull request
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CODEX_MESSAGE_FILE: ${{ runner.temp }}/codex-final-message.txt
+        run: |
+          body="Automated maintenance by Codex.\n\n"
+          if [ -f "$CODEX_MESSAGE_FILE" ]; then
+            body+="$(cat "$CODEX_MESSAGE_FILE")"
+          fi
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "Automated Codex maintenance" \
+            --body "$body"
+
+      - name: Upload Codex report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-maintenance-report
+          path: ${{ runner.temp }}/codex-final-message.txt
+          if-no-files-found: ignore
