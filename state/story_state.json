@@ -1,0 +1,47 @@
+{
+  "series_title": "원고의 바깥",
+  "next_episode": 1,
+  "meta_rule": {
+    "inner_novel_equals_outer_novel": true
+  },
+  "theme": [
+    "창작과 현실",
+    "작가와 작품의 관계",
+    "허구와 현실의 경계"
+  ],
+  "world": null,
+  "characters": [],
+  "canon": {
+    "facts": [],
+    "beliefs": [],
+    "hypotheses": [],
+    "unresolved_questions": []
+  },
+  "meta_state": {
+    "author": {
+      "identity": null,
+      "knows_the_story_is_fiction": null,
+      "knows_the_reader_exists": null
+    },
+    "world_text_relationship": {
+      "written_events_affect_world": "unknown",
+      "world_affects_written_text": "unknown",
+      "author_can_change_past": "unknown"
+    },
+    "reader_relationship": {
+      "reader_exists_in_world": "unknown",
+      "characters_can_address_reader": null
+    },
+    "narrative_layer": {
+      "current_layer": "unknown",
+      "known_layers": []
+    },
+    "meta_facts": [],
+    "meta_questions": [],
+    "meta_anomalies": []
+  },
+  "history": [],
+  "open_threads": [],
+  "recent_fingerprints": [],
+  "last_generated_at": null
+}
