@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+import json
+import sys
 import time
+from pathlib import Path
 from typing import Any, Callable
 
 from google import genai
 from google.genai import types
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 import scripts.generate_episode as generator
 
@@ -14,7 +21,13 @@ BACKOFF_SECONDS = (2, 5, 10)
 
 
 def _status_code(exc: Exception) -> int | None:
-    return getattr(exc, "status_code", None) or getattr(exc, "code", None)
+    value = getattr(exc, "status_code", None)
+    if value is None:
+        value = getattr(exc, "code", None)
+    try:
+        return int(value) if value is not None else None
+    except (TypeError, ValueError):
+        return None
 
 
 def _is_retryable(exc: Exception) -> bool:
@@ -22,10 +35,20 @@ def _is_retryable(exc: Exception) -> bool:
     if code in RETRYABLE_STATUS:
         return True
     text = str(exc).lower()
-    return any(token in text for token in (
-        "429", "500", "502", "503", "504",
-        "unavailable", "temporarily", "rate limit", "resource exhausted",
-    ))
+    return any(
+        token in text
+        for token in (
+            "429",
+            "500",
+            "502",
+            "503",
+            "504",
+            "unavailable",
+            "temporarily",
+            "rate limit",
+            "resource exhausted",
+        )
+    )
 
 
 def _normalize_model(name: str) -> str:
@@ -34,34 +57,43 @@ def _normalize_model(name: str) -> str:
 
 def _available_models(client: genai.Client, requested: str) -> list[str]:
     names: list[str] = []
+    requested = _normalize_model(requested.strip())
     if requested:
-        names.append(_normalize_model(requested))
+        names.append(requested)
 
     try:
         for item in client.models.list():
             name = _normalize_model(getattr(item, "name", "") or "")
             if not name or name in names:
                 continue
-            methods = getattr(item, "supported_actions", None) or getattr(item, "supported_generation_methods", None) or []
+            methods = (
+                getattr(item, "supported_actions", None)
+                or getattr(item, "supported_generation_methods", None)
+                or []
+            )
             if methods and not any("generate" in str(x).lower() for x in methods):
                 continue
             lowered = name.lower()
-            if any(x in lowered for x in ("embedding", "imagen", "veo", "tts", "audio", "live")):
+            if any(
+                x in lowered
+                for x in ("embedding", "imagen", "veo", "tts", "audio", "live")
+            ):
                 continue
             names.append(name)
     except Exception:
         pass
 
-    preferred = []
-    for name in generator.PREFERRED_MODELS:
-        if name in names and name not in preferred:
-            preferred.append(name)
-
+    preferred = [name for name in generator.PREFERRED_MODELS if name in names]
     flash = [
-        name for name in names
+        name
+        for name in names
         if "flash" in name.lower() and "preview" not in name.lower()
+        and name not in preferred
     ]
-    rest = [name for name in names if name not in preferred and name not in flash]
+    rest = [
+        name for name in names
+        if name not in preferred and name not in flash
+    ]
     return preferred + flash + rest
 
 
@@ -72,7 +104,9 @@ def _call_with_fallback(
 ) -> Any:
     models = _available_models(client, requested_model)
     if not models:
-        models = [_normalize_model(requested_model)]
+        raise RuntimeError(
+            "Gemini API에서 generateContent를 지원하는 모델을 찾지 못했습니다."
+        )
 
     failures: list[str] = []
     for model in models:
@@ -108,8 +142,8 @@ def resilient_json_call(client: genai.Client, model: str, prompt: str) -> Any:
         if not text:
             raise RuntimeError("모델이 빈 응답을 반환했습니다.")
         try:
-            return __import__("json").loads(text)
-        except ValueError as exc:
+            return json.loads(text)
+        except json.JSONDecodeError as exc:
             raise RuntimeError(f"JSON 응답 파싱 실패: {text[:500]}") from exc
 
     return _call_with_fallback(client, model, call)
