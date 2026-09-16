@@ -33,7 +33,7 @@
   },
   "meta_state": {
     "author": {
-      "identity": null,
+      "identity": "선우",
       "knows_the_story_is_fiction": null,
       "knows_the_reader_exists": null
     },
@@ -47,7 +47,7 @@
       "characters_can_address_reader": null
     },
     "narrative_layer": {
-      "current_layer": "unknown",
+      "current_layer": "선우가 실제로 작성하고 있는 원고",
       "known_layers": []
     },
     "meta_facts": [],
@@ -75,7 +75,7 @@
       "meta_revelation": "쓰여진 텍스트와 현실 세계의 물리적 반응 사이에 미세한 틈새가 감지됨",
       "author_action": "몽당연필로 붉은 선이 그어진 원고지에 일상의 세부와 문장을 적어 내려감",
       "fiction_reality_relation": "원고의 묘사와 현실의 사건이 시간적으로 정확히 맞물리는 징후 발생",
-      "narrative_layer": "인쇄소 골목의 방안, 원고를 쓰는 인물의 시점",
+      "narrative_layer": "선우가 실제로 작성하고 있는 원고",
       "episode": 1
     }
   ],
