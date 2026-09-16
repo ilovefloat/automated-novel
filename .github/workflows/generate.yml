@@ -25,6 +25,8 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      episode_path: ${{ steps.result.outputs.episode_path }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -43,6 +45,12 @@ jobs:
           if [[ "${{ inputs.dry_run }}" == "true" ]]; then args+=(--preview-dir preview); fi
           if [[ "${{ github.event_name }}" == "schedule" ]]; then args+=(--skip-if-generated-today); fi
           python scripts/generate_episode.py "${args[@]}"
+      - name: Export episode path
+        id: result
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          path=$(python -c "import json; print(json.load(open('$RUNNER_TEMP/result.json'))['episode_path'])")
+          echo "episode_path=$path" >> "$GITHUB_OUTPUT"
       - name: Rebuild index
         if: ${{ inputs.dry_run != true }}
         run: python scripts/rebuild_index.py
