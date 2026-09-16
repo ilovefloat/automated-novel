@@ -1,6 +1,8 @@
 name: Generate episode
 
 on:
+  push:
+    paths: [".github/workflows/generate.yml"]
   workflow_dispatch:
     inputs:
       dry_run:
@@ -38,22 +40,10 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
-        run: |
-          args=(--result-json "$RUNNER_TEMP/result.json")
-          if [[ "${{ inputs.dry_run }}" == "true" ]]; then args+=(--preview-dir preview); fi
-          if [[ "${{ github.event_name }}" == "schedule" ]]; then args+=(--skip-if-generated-today); fi
-          python scripts/generate_episode.py "${args[@]}"
+        run: python scripts/generate_episode.py --result-json "$RUNNER_TEMP/result.json"
       - name: Rebuild index
-        if: ${{ inputs.dry_run != true }}
         run: python scripts/rebuild_index.py
-      - name: Preview artifact
-        if: ${{ inputs.dry_run == true }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: episode-preview
-          path: preview
       - name: Commit
-        if: ${{ inputs.dry_run != true }}
         run: |
           git config user.name "novel-bot"
           git config user.email "novel-bot@users.noreply.github.com"
