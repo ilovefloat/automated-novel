@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import sys
 import time
@@ -13,7 +14,29 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-import scripts.generate_episode as generator
+
+def _load_generator() -> Any:
+    """Load the generator after escaping literal JSON braces in f-string prompts."""
+    path = ROOT / "scripts" / "generate_episode.py"
+    source = path.read_text(encoding="utf-8")
+    source = source.replace(
+        'JSON으로 {"selected_index": 정수, "reason": 문자열, "risks": [문자열]}만 반환하라.',
+        'JSON으로 {{"selected_index": 정수, "reason": 문자열, "risks": [문자열]}}만 반환하라.',
+    )
+    source = source.replace(
+        '- meta_movement: {"reveal": ..., "question_raised": ..., "question_answered": ...}',
+        '- meta_movement: {{"reveal": ..., "question_raised": ..., "question_answered": ...}}',
+    )
+    spec = importlib.util.spec_from_file_location("scripts.generate_episode", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError("generate_episode.py를 로드할 수 없습니다.")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    exec(compile(source, str(path), "exec"), module.__dict__)
+    return module
+
+
+generator = _load_generator()
 
 RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 MAX_RETRIES_PER_MODEL = 3
