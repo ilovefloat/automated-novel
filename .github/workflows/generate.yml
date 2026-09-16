@@ -1,9 +1,6 @@
 name: Generate episode
 
 on:
-  push:
-    branches: [main]
-    paths: [".generation-test"]
   workflow_dispatch:
     inputs:
       dry_run:
