@@ -1,0 +1,74 @@
+name: Generate episode
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Preview only; do not commit an episode
+        required: false
+        default: false
+        type: boolean
+  schedule:
+    - cron: "17 18 * * *"
+    - cron: "47 22 * * *"
+    - cron: "17 3 * * *"
+    - cron: "47 9 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: novel-generation
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - name: Validate Python
+        run: python -m py_compile scripts/*.py
+      - name: Generate
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+        run: |
+          args=(--result-json "$RUNNER_TEMP/result.json")
+          if [[ "${{ inputs.dry_run }}" == "true" ]]; then args+=(--preview-dir preview); fi
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then args+=(--skip-if-generated-today); fi
+          python scripts/generate_episode.py "${args[@]}"
+      - name: Rebuild index
+        if: ${{ inputs.dry_run != true }}
+        run: python scripts/rebuild_index.py
+      - name: Preview artifact
+        if: ${{ inputs.dry_run == true }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: episode-preview
+          path: preview
+      - name: Commit
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          git config user.name "novel-bot"
+          git config user.email "novel-bot@users.noreply.github.com"
+          git add docs/episodes docs/episodes.json state/story_state.json state/model_catalog.json
+          if git diff --cached --quiet; then exit 0; fi
+          episode=$(python -c "import json; print(json.load(open('state/story_state.json'))['next_episode']-1)")
+          git commit -m "Publish episode ${episode}"
+          git push
+
+  publish-novelpia:
+    if: ${{ inputs.dry_run != true }}
+    needs: generate
+    uses: ./.github/workflows/publish-novelpia.yml
+    with:
+      episode_path: ${{ needs.generate.outputs.episode_path }}
+      preview_only: false
+      force_republish: false
+    secrets: inherit
