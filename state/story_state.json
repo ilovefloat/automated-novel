@@ -1,6 +1,6 @@
 {
   "series_title": "원고의 바깥",
-  "next_episode": 1,
+  "next_episode": 2,
   "meta_rule": {
     "inner_novel_equals_outer_novel": true
   },
@@ -10,12 +10,26 @@
     "허구와 현실의 경계"
   ],
   "world": null,
-  "characters": [],
+  "characters": [
+    {
+      "name": "선우",
+      "change": "만성적인 피로 속에 글을 쓰던 중, 자신이 쓴 문장과 정확히 일치하는 시점에 창밖의 발소리가 멈추는 현상을 겪고 긴장 상태에 진입함."
+    }
+  ],
   "canon": {
-    "facts": [],
-    "beliefs": [],
+    "facts": [
+      "배경은 밤의 인쇄소 골목이며, 지하에서 올라오는 윤전기의 진동과 잉크 냄새가 느껴지는 공간이다.",
+      "선우는 낡은 원고지에 몽당연필로 글을 쓰고 있다.",
+      "선우가 원고지에 '창밖에서 발소리가 멈췄다'는 문장을 적은 직후, 복도를 울리던 구두 발소리가 선우의 방 창문 바로 앞에서 실제로 멈추었다."
+    ],
+    "beliefs": [
+      "선우는 창밖의 발소리 멈춤 현상이 지나가던 사람이 멈춰 선 등의 우연일 것이라고 이성적으로 생각하려 한다."
+    ],
     "hypotheses": [],
-    "unresolved_questions": []
+    "unresolved_questions": [
+      "창밖의 어둠 속에 멈춰 선 존재의 정체는 무엇인가?",
+      "원고에 적은 문장과 현실의 물리적 사건이 일치한 것은 단순한 우연인가?"
+    ]
   },
   "meta_state": {
     "author": {
@@ -37,11 +51,33 @@
       "known_layers": []
     },
     "meta_facts": [],
-    "meta_questions": [],
-    "meta_anomalies": []
+    "meta_questions": [
+      "원고에 기록하는 행위가 현실의 사건을 유발하거나 예고하는가?"
+    ],
+    "meta_anomalies": [
+      "원고지에 쓴 '창밖에서 발소리가 멈췄다'는 문장이 완성되는 순간과 복도의 발소리가  정확히 멈춘 타이밍의 일치"
+    ]
   },
-  "history": [],
-  "open_threads": [],
-  "recent_fingerprints": [],
-  "last_generated_at": null
+  "history": [
+    {
+      "episode": 1,
+      "summary": "",
+      "ending_state": "",
+      "meta_revelation": "기록하는 문장과 현실의 물리적 사건이 기묘하게 일치하는 첫 번째 순간이 포착됨"
+    }
+  ],
+  "open_threads": [
+    "선우의 방 창밖 어둠 속에 멈춰 선 존재와의 대치 상황"
+  ],
+  "recent_fingerprints": [
+    {
+      "meta_device": "원고의 문장 작성 시점과 현실 소리의 정지 시점의 일치",
+      "meta_revelation": "쓰여진 텍스트와 현실 세계의 물리적 반응 사이에 미세한 틈새가 감지됨",
+      "author_action": "몽당연필로 붉은 선이 그어진 원고지에 일상의 세부와 문장을 적어 내려감",
+      "fiction_reality_relation": "원고의 묘사와 현실의 사건이 시간적으로 정확히 맞물리는 징후 발생",
+      "narrative_layer": "인쇄소 골목의 방안, 원고를 쓰는 인물의 시점",
+      "episode": 1
+    }
+  ],
+  "last_generated_at": "2026-09-16T15:59:43+00:00"
 }
