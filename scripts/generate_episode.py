@@ -333,6 +333,8 @@ JSON 객체:
   "ending_state": 문자열,
   "facts_added": [문자열],
   "characters_added_or_changed": [객체],
+  "author_state": {{"identity": 문자열 또는 null, "knows_the_story_is_fiction": true/false/null, "knows_the_reader_exists": true/false/null}},
+  "narrative_layer": 문자열 또는 null,
   "beliefs_added": [문자열],
   "hypotheses_added": [문자열],
   "open_questions_added": [문자열],
@@ -344,7 +346,9 @@ JSON 객체:
   "meta_revelation": 문자열 또는 null,
   "narrative_fingerprint": {{"meta_device": 문자열, "meta_revelation": 문자열, "author_action": 문자열, "fiction_reality_relation": 문자열, "narrative_layer": 문자열}}
 }}
-본문에 실제로 드러난 것만 기록하고 추론으로 새 사실을 만들지 마라."""
+본문에 실제로 드러난 것만 기록하고 추론으로 새 사실을 만들지 마라.
+특히 author_state는 본문에서 작가의 정체나 인식 수준이 명시되거나 명백하게 확정된 경우에만 갱신하라. 알 수 없으면 기존 값을 유지할 수 있도록 null을 사용하라.
+narrative_layer도 본문에서 서술 층위가 명확하게 드러난 경우에만 기록하라."""
     value = json_call(client, model, prompt)
     if not isinstance(value, dict):
         raise RuntimeError("상태 delta 형식 오류")
@@ -375,6 +379,18 @@ def commit_delta(state: dict[str, Any], delta: dict[str, Any], episode: int) -> 
             existing.update(item)
 
     meta = new.setdefault("meta_state", {})
+    author = meta.setdefault("author", {})
+    author_delta = delta.get("author_state")
+    if isinstance(author_delta, dict):
+        for key in ("identity", "knows_the_story_is_fiction", "knows_the_reader_exists"):
+            value = author_delta.get(key)
+            if value is not None:
+                author[key] = value
+
+    narrative_layer = delta.get("narrative_layer")
+    if isinstance(narrative_layer, str) and narrative_layer.strip():
+        meta.setdefault("narrative_layer", {})["current_layer"] = narrative_layer.strip()
+
     for key in ("meta_facts", "meta_questions", "meta_anomalies"):
         meta.setdefault(key, [])
     for source, target in (("meta_facts_added", "meta_facts"), ("meta_questions_added", "meta_questions"), ("meta_anomalies_added", "meta_anomalies")):
@@ -432,78 +448,57 @@ def main() -> int:
     args = parser.parse_args()
 
     state = load_state()
+    episode = int(state.get("next_episode", 1))
+    target = EPISODES_DIR / f"{episode:03d}.md"
+    if target.exists():
+        raise RuntimeError(f"다음 회차 파일이 이미 존재합니다: {target}")
     if args.skip_if_generated_today and state.get("last_generated_at"):
-        try:
-            last = datetime.fromisoformat(state["last_generated_at"])
-            if last.astimezone(KST).date() == datetime.now(KST).date():
-                result = {"mode": "skipped", "episode_path": ""}
-                if args.result_json:
-                    args.result_json.parent.mkdir(parents=True, exist_ok=True)
-                    args.result_json.write_text(json.dumps(result), encoding="utf-8")
-                return 0
-        except ValueError:
-            pass
+        last = datetime.fromisoformat(str(state["last_generated_at"]))
+        if last.astimezone(KST).date() == datetime.now(KST).date():
+            print("오늘 이미 회차가 생성되었습니다. 건너뜁니다.")
+            return 0
 
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise SystemExit("GEMINI_API_KEY가 설정되지 않았습니다.")
+        raise RuntimeError("GEMINI_API_KEY가 설정되지 않았습니다.")
     client = genai.Client(api_key=api_key)
     model = choose_model(client)
-    episode = int(state.get("next_episode", 1))
-    path = EPISODES_DIR / f"{episode:03d}.md"
-    if path.exists():
-        raise SystemExit(f"이미 존재하는 에피소드 파일입니다: {path}")
 
-    candidates = architect(client, model, state)
-    judgment = judge(client, model, state, candidates)
-    direction = candidates[int(judgment["selected_index"])]
-    plan = blueprint(client, model, state, direction, judgment)
-
-    body = ""
-    failure = ""
+    last_failure = ""
     for attempt in range(1, MAX_ATTEMPTS + 1):
-        body = write_episode(client, model, state, direction, plan, failure)
-        errors: list[str] = []
-        if len(re.sub(r"\s+", "", body)) < MIN_CHARS:
-            errors.append(f"본문이 너무 짧음: 최소 {MIN_CHARS}자")
-        errors.extend(validate_meta(client, model, state, plan, body))
-        errors.extend(validate_continuity(client, model, state, body))
-        errors.extend(validate_quality(client, model, state, body))
-        if not errors:
-            break
-        failure = "\n".join(f"- {x}" for x in errors)
-        if attempt == MAX_ATTEMPTS:
-            raise SystemExit("검증을 통과하지 못해 발행하지 않습니다.\n" + failure)
+        candidates = architect(client, model, state)
+        judgment = judge(client, model, state, candidates)
+        direction = candidates[int(judgment["selected_index"])]
+        plan = blueprint(client, model, state, direction, judgment)
+        body = write_episode(client, model, state, direction, plan, last_failure)
+        if len(body) < MIN_CHARS:
+            last_failure = f"본문이 너무 짧습니다: {len(body)}자"
+            continue
+        errors = validate_meta(client, model, state, plan, body)
+        errors += validate_continuity(client, model, state, body)
+        errors += validate_quality(client, model, state, body)
+        delta = extract_delta(client, model, state, body, plan)
+        errors += fingerprint_repetition(state, delta)
+        if errors:
+            last_failure = "\n".join(f"- {x}" for x in errors)
+            continue
 
-    delta = extract_delta(client, model, state, body, plan)
-    repeat = fingerprint_repetition(state, delta)
-    if repeat:
-        raise SystemExit("메타 장치 반복 검증 실패:\n" + "\n".join(repeat))
+        new_state = commit_delta(state, delta, episode)
+        markdown = make_markdown(episode, body)
+        if args.preview_dir:
+            args.preview_dir.mkdir(parents=True, exist_ok=True)
+            atomic_write(args.preview_dir / f"{episode:03d}.md", markdown)
+            atomic_write(args.preview_dir / "story_state.json", json.dumps(new_state, ensure_ascii=False, indent=2) + "\n")
+        else:
+            atomic_write(target, markdown)
+            try:
+                save_state(new_state)
+            except Exception:
+                target.unlink(missing_ok=True)
+                raise
+        if args.result_json:
+            atomic_write(args.result_json, json.dumps({"episode": episode, "status": "generated", "attempt": attempt}, ensure_ascii=False) + "\n")
+        print(f"{episode}화 생성 완료 ({attempt}번째 시도, {model})")
+        return 0
 
-    new_state = commit_delta(state, delta, episode)
-    preview = args.preview_dir is not None
-    if preview:
-        out = args.preview_dir / path.name
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(make_markdown(episode, body), encoding="utf-8")
-        mode = "preview"
-        episode_path = ""
-    else:
-        atomic_write(path, make_markdown(episode, body))
-        try:
-            save_state(new_state)
-        except Exception:
-            path.unlink(missing_ok=True)
-            raise
-        mode = "publish"
-        episode_path = path.relative_to(ROOT).as_posix()
-
-    if args.result_json:
-        args.result_json.parent.mkdir(parents=True, exist_ok=True)
-        args.result_json.write_text(json.dumps({"mode": mode, "episode_path": episode_path, "model": model}, ensure_ascii=False), encoding="utf-8")
-    print(f"{mode}: episode={episode}, model={model}")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    raise RuntimeError(f"{MAX_ATTEMPTS}회 생성/검증 시도 모두 실패했습니다.\n{last_failure}")
