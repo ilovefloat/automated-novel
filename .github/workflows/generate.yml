@@ -18,7 +18,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: novel-maintenance
+  group: novel-generation
   cancel-in-progress: false
 
 jobs:
