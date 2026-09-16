@@ -42,7 +42,7 @@ jobs:
           args=(--result-json "$RUNNER_TEMP/result.json")
           if [[ "${{ inputs.dry_run }}" == "true" ]]; then args+=(--preview-dir preview); fi
           if [[ "${{ github.event_name }}" == "schedule" ]]; then args+=(--skip-if-generated-today); fi
-          python scripts/generate_episode.py "${args[@]}"
+          python scripts/generation_runtime.py "${args[@]}"
       - name: Rebuild index
         if: ${{ inputs.dry_run != true }}
         run: python scripts/rebuild_index.py
