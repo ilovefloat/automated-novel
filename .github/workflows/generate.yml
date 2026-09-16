@@ -2,7 +2,7 @@ name: Generate episode
 
 on:
   push:
-    paths: [".github/workflows/generate.yml"]
+    paths: ["README.md"]
   workflow_dispatch:
     inputs:
       dry_run:
