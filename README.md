@@ -21,9 +21,12 @@
 필요한 설정:
 
 - Secret: `GEMINI_API_KEY`
+- Secret: `OPENAI_API_KEY` (Codex 유지보수용)
 - Variable: `GEMINI_MODEL` (선택)
 
 `Generate episode` workflow가 회차를 생성하고 `docs/`를 갱신한다.
+
+`Codex maintenance` workflow가 저장소의 생성 엔진과 운영 인프라를 정기적으로 검사하고, 필요한 변경만 별도 브랜치와 PR로 만든다.
 
 ## GitHub Pages
 
