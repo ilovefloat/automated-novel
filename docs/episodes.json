@@ -16,5 +16,11 @@
     "title": "3화",
     "date": "2026-09-19",
     "path": "episodes/003.md"
+  },
+  {
+    "episode": 4,
+    "title": "4화",
+    "date": "2026-09-20",
+    "path": "episodes/004.md"
   }
 ]
