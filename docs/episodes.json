@@ -58,5 +58,11 @@
     "title": "10화",
     "date": "2026-09-26",
     "path": "episodes/010.md"
+  },
+  {
+    "episode": 11,
+    "title": "11화",
+    "date": "2026-09-27",
+    "path": "episodes/011.md"
   }
 ]
