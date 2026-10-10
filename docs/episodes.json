@@ -136,5 +136,11 @@
     "title": "23화",
     "date": "2026-10-10",
     "path": "episodes/023.md"
+  },
+  {
+    "episode": 24,
+    "title": "24화",
+    "date": "2026-10-11",
+    "path": "episodes/024.md"
   }
 ]
