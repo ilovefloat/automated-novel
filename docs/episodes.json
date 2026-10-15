@@ -166,5 +166,11 @@
     "title": "28화",
     "date": "2026-10-15",
     "path": "episodes/028.md"
+  },
+  {
+    "episode": 29,
+    "title": "29화",
+    "date": "2026-10-16",
+    "path": "episodes/029.md"
   }
 ]
