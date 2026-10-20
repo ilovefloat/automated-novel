@@ -196,5 +196,11 @@
     "title": "33화",
     "date": "2026-10-20",
     "path": "episodes/033.md"
+  },
+  {
+    "episode": 34,
+    "title": "34화",
+    "date": "2026-10-21",
+    "path": "episodes/034.md"
   }
 ]
