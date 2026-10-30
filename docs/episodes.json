@@ -256,5 +256,11 @@
     "title": "43화",
     "date": "2026-10-30",
     "path": "episodes/043.md"
+  },
+  {
+    "episode": 44,
+    "title": "44화",
+    "date": "2026-10-31",
+    "path": "episodes/044.md"
   }
 ]
