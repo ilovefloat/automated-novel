@@ -298,5 +298,11 @@
     "title": "50화",
     "date": "2026-11-06",
     "path": "episodes/050.md"
+  },
+  {
+    "episode": 51,
+    "title": "51화",
+    "date": "2026-11-07",
+    "path": "episodes/051.md"
   }
 ]
