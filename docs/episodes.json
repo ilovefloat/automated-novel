@@ -358,5 +358,11 @@
     "title": "60화",
     "date": "2026-11-16",
     "path": "episodes/060.md"
+  },
+  {
+    "episode": 61,
+    "title": "61화",
+    "date": "2026-11-17",
+    "path": "episodes/061.md"
   }
 ]
