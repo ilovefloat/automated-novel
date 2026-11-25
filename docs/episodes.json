@@ -412,5 +412,11 @@
     "title": "69화",
     "date": "2026-11-25",
     "path": "episodes/069.md"
+  },
+  {
+    "episode": 70,
+    "title": "70화",
+    "date": "2026-11-26",
+    "path": "episodes/070.md"
   }
 ]
